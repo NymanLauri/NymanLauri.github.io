@@ -22,7 +22,7 @@ At the time that I posted the previous blog post, the project outline looked as 
 
 Since the last blog post, there have been changes in the project outline. Namely, implementing search targets has been removed. This is because a practical design is to have the user invert the problem so that the largest eigenvalue is the desired one. Hence, instead of implementing search targets, the time interval July 1 - 14 in the project schedule is spent on making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call. Furthermore, JuliaCon occupies the week 6 August - 12 August which was not taken into account in the original project schedule. Hence, the project  should be paced so that it is done by 6 August. Current schedule is therefore:
 
-__1 - 14 July:__ Make implementation fully native
+__1 - 14 July:__ Make implementation fully native.
 
 __15 July - 6 August:__ Add support for generalized eigenvalue problems, write documentation, tests and benchmarking.
 
@@ -50,8 +50,8 @@ To improve stability, the implementation now uses partial schur decomposition, a
 
 The next steps in this projects are:
 
-* Finish making the implementation fully native
+* Finish making the implementation fully native.
 
-* Add support for generalized eigenvalue problems
+* Add support for generalized eigenvalue problems.
 
 After these, the project is nearly finished!
