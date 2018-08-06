@@ -6,7 +6,7 @@ date:   2018-08-06
 
 Since JuliaCon occupies the week 6 August - 12 August, we have finally arrived at the end of the last full week of the project. I want to give you an overview of the whole project: what was the initial motivation and plan; what has been done; and what still would need to be implemented.
 
-# Where the code can be accessed & documentation
+# Code & documentation
 Over the summer I worked on the [IRAM.jl](https://github.com/haampie/IRAM.jl) repository which aims at implementing ARPACK's `eigs` function in pure Julia for nonsymmetric matrices. The documentation of the method can be found [here](https://haampie.github.io/IRAM.jl/latest/).
 
 # Original plan
@@ -15,11 +15,8 @@ The aim was to implement an eigenvalue problem solver for large and sparse nonsy
 # Initial project outline
 
 * IRAM for real and complex arithmetics with QR iterations through Givens rotations. __DONE__
-
 * Finding multiple eigenpairs which requires locking of converged Ritz vectors. __DONE__
-
 * Adding search targets for eigenvalues. __DONE__
-
 * Adding support for generalized eigenvalue problems. __DONE__
 
 Additional stuff:
@@ -29,17 +26,13 @@ Additional stuff:
 After a few twists and turns, the search targets as well as support for generalized eigenvalue problems were implemented after all.
 
 # Major developments
-During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of. 
+During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of:
 
-Computing the QR decomposition through Givens rotations and using this in `implicit_restart`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
-
-Locking of Ritz vectors: [#7](https://github.com/haampie/IRAM.jl/pull/7)
-
-QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
-
-Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
-
-Transform Schur form into eigenvectors: [#49](https://github.com/haampie/IRAM.jl/pull/49)
+* Computing the QR decomposition through Givens rotations and using this in `implicit_restart`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
+* Locking of Ritz vectors: [#7](https://github.com/haampie/IRAM.jl/pull/7)
+* QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
+* Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
+* Transform Schur form into eigenvectors: [#49](https://github.com/haampie/IRAM.jl/pull/49)
 
 # How to use it?
 
