@@ -31,27 +31,32 @@ After a few twists and turns, the search targets as well as support for generali
 # Major developments
 During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of. 
 
-Computing the QR decomposition through Givens rotations and using this in `implicit_restart`:
+__Computing the QR decomposition through Givens rotations and using this in `implicit_restart`:__
 * [#2](https://github.com/haampie/IRAM.jl/pull/2)
 * [#4](https://github.com/haampie/IRAM.jl/pull/4)
 
-Locking of Ritz vectors
+__Locking of Ritz vectors:__
 * [#7](https://github.com/haampie/IRAM.jl/pull/7)
 
-QR step made implicit
+__QR step made implicit:__
 * [#10](https://github.com/haampie/IRAM.jl/pull/10)
 
-Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form.
+__Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form:__
 * [#28](https://github.com/haampie/IRAM.jl/pull/28)
 * [#30](https://github.com/haampie/IRAM.jl/pull/30)
 
-Transform Schur form into eigenvectors
+__Transform Schur form into eigenvectors:__
 * [#49](https://github.com/haampie/IRAM.jl/pull/49)
 
-At the end of the project, the method looks like this:
-`partial_schur(A; min = 5, max = 30, nev = min, tol = eps(T), maxiter = 20, which=LM())`
+#How to use it?
 
-`A` is the matrix whose eigenvalues you want to compute, `min` specifies the dimension to which the Hessenberg matrix is reduced after `implicit_restart`, `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi` stops increasing the dimension of the Krylov subspace. `tol` specifies the criterion for when eigenpairs have converged (In practice, smaller `tol` forces the eigenpairs to converge even more). `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration. `which` is a `Target` struct and specific which eigenvalues are desired (smallest magnitude, smallest real part, etc). CAN / SHOULD BE ABLE TO FIND IN DOCUMENTATION AT SOME POINT
+Currently, the way to use the method is as follows:
+
+`partial_schur(A; min = 5, max = 30, nev = min, tol = eps(eltype(A)), maxiter = 20, which=LM())`
+
+Here, `A` is the matrix whose eigenvalues you want to compute, `min` specifies the dimension to which the Hessenberg matrix is reduced after `implicit_restart`, `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi` stops increasing the dimension of the Krylov subspace. `tol` specifies the criterion for when eigenpairs have converged (In practice, smaller `tol` forces the eigenpairs to converge even more). `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration. `which` is a `Target` struct and specific which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
+
+This returns a partial Schur decomposition of the matrix where the upper triangular matrix R is of size nev by nev.
 
 # What's the benefit of all of this?
 Benefits of implementing native replacement of `eigs`:
@@ -62,32 +67,16 @@ etc.)
 * Native `eigs` is more readable and easier to maintain
 than Arpack's `eigs` that is written in Fortran 90
 
-# Description of what was implemented
-
-__Fully native code__
-
-__Double shift__
-
-In `implicit_restart!`, the arnoldi procedure is restarted by shrinking the Krylov subspace by shifting away unwanted eigenvalues. If our matrix is real and the eigenvalue we want to shift happens to be complex, then we can combine two shifts that are the unwanted eigenvalue and its complex conjugate in order to stay in real arithmetic. This is implemented in [`double_shift!`](https://github.com/NymanLauri/IRAM.jl/blob/master/src/implicit_restart.jl#L110).
-
-__Implicit QR steps__
-
-The QR steps in `double_shift!` and `single_shift!` are now done implicitly. This was done to make it easier to implement double shift for conjugate eigenvalues. With implicit QR shifts, both single and double shifts are implemented with bulge chasing and hence work in a similar manner.
-
-__Using partial Schur decomposition__
-
-To improve stability, the implementation uses partial schur decomposition, and brings the locked part of the Hessenberg matrix into upper triangular form. The function [`restarted_arnoldi`](https://github.com/NymanLauri/IRAM.jl/blob/master/src/run.jl#L5) currently returns the partial Schur decomposition of the converged part of the Hessenberg matrix from which the eigenvalues and eigenvectors of the original matrix can be computed.
-
 # What is missing
 
-Functionality-wise:
+__Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
 
-Performance & stability-wise
+__Performance & stability-wise:__
 * Benchmark & profile the code in order to find areas of improvement. The method should be the same as `eigs`, however sometimes there seems to be big differences in performance.
 
 * Currently known performance considerations
 	- Refactor temporary variables
-	- In `backward_subst!`, handle the case where you want eigenvectors for conjugate eigenvalues in real arithmetic.
+	- In `backward_subst!`, handle the case where you want eigenvectors for conjugate eigenvalues in real arithmetic
 
-* Stability considerations for `backward_subst!` such as smallest value for which it is safe to divide.
+* Stability considerations for `backward_subst!` such as smallest value for which it is safe to divide
