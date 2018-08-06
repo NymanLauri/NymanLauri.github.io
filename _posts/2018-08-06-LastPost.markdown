@@ -31,24 +31,17 @@ After a few twists and turns, the search targets as well as support for generali
 # Major developments
 During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of. 
 
-__Computing the QR decomposition through Givens rotations and using this in `implicit_restart`:__
-* [#2](https://github.com/haampie/IRAM.jl/pull/2)
-* [#4](https://github.com/haampie/IRAM.jl/pull/4)
+Computing the QR decomposition through Givens rotations and using this in `implicit_restart`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
 
-__Locking of Ritz vectors:__
-* [#7](https://github.com/haampie/IRAM.jl/pull/7)
+Locking of Ritz vectors: [#7](https://github.com/haampie/IRAM.jl/pull/7)
 
-__QR step made implicit:__
-* [#10](https://github.com/haampie/IRAM.jl/pull/10)
+QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
 
-__Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form:__
-* [#28](https://github.com/haampie/IRAM.jl/pull/28)
-* [#30](https://github.com/haampie/IRAM.jl/pull/30)
+Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
 
-__Transform Schur form into eigenvectors:__
-* [#49](https://github.com/haampie/IRAM.jl/pull/49)
+Transform Schur form into eigenvectors: [#49](https://github.com/haampie/IRAM.jl/pull/49)
 
-#How to use it?
+# How to use it?
 
 Currently, the way to use the method is as follows:
 
@@ -67,7 +60,7 @@ etc.)
 * Native `eigs` is more readable and easier to maintain
 than Arpack's `eigs` that is written in Fortran 90
 
-# What is missing
+# What's left to do?
 
 __Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
