@@ -1,0 +1,95 @@
+---
+layout: post
+title:  "Final Blog Post"
+date:   2018-08-06
+---
+
+
+Since JuliaCon occupies the week 6 August - 12 August, we have finally arrived at the end of the last full week of the project. I want to give you an overview of the whole project: what was the initial motivation and plan; what has been done; and what still would need to be implemented.
+
+# Where the code can be accessed & documentation
+Over the summer I worked on the [IRAM.jl](https://github.com/haampie/IRAM.jl) repository which aims at implementing ARPACK’s `eigs` function in pure Julia for nonsymmetric matrices. The documentation of the method can be found [here](https://haampie.github.io/IRAM.jl/latest/).
+
+# Original plan
+The aim was to implement an eigenvalue problem solver for large and sparse nonsymmetric matrices in Julia that would replace ARPACK’s `eigs` function. This helps reduce the dependency of Julia language on ARPACK. I will provide benchmarks comparing the performance of the native `eigs` versus ARPACK’s `eigs`. The aim at first was to get the method into the package IterativeSolvers.jl. However, it is also a possibility to just register the package.
+
+# Initial project outline
+
+* IRAM for real and complex arithmetics with QR iterations through Givens rotations. __DONE__
+
+* Finding multiple eigenpairs which requires locking of converged Ritz vectors. __DONE__
+
+* Adding search targets for eigenvalues. __DONE__
+
+* Adding support for generalized eigenvalue problems. __DONE__
+
+Additional stuff:
+
+* Making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call.
+
+After a few twists and turns, the search targets as well as support for generalized eigenvalue problems were implemented after all.
+
+# Major developments
+During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of. 
+
+Computing the QR decomposition through Givens rotations and using this in `implicit_restart`:
+* [#2](https://github.com/haampie/IRAM.jl/pull/2)
+* [#4](https://github.com/haampie/IRAM.jl/pull/4)
+
+Locking of Ritz vectors
+* [#7](https://github.com/haampie/IRAM.jl/pull/7)
+
+QR step made implicit
+* [#10](https://github.com/haampie/IRAM.jl/pull/10)
+
+Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form.
+* [#28](https://github.com/haampie/IRAM.jl/pull/28)
+* [#30](https://github.com/haampie/IRAM.jl/pull/30)
+
+Transform Schur form into eigenvectors
+* [#49](https://github.com/haampie/IRAM.jl/pull/49)
+
+At the end of the project, the method looks like this:
+(# How to use it?)
+`partial_schur(A; min = 5, max = 30, nev = min, tol = eps(T), maxiter = 20, which=LM())`
+
+`A` is the matrix whose eigenvalues you want to compute, `min` specifies the dimension to which the Hessenberg matrix is reduced after `implicit_restart`, `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi` stops increasing the dimension of the Krylov subspace. `tol` specifies the criterion for when eigenpairs have converged (In practice, smaller `tol` forces the eigenpairs to converge even more). `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration. `which` is a `Target` struct and specific which eigenvalues are desired (smallest magnitude, smallest real part, etc). CAN / SHOULD BE ABLE TO FIND IN DOCUMENTATION AT SOME POINT
+
+# What’s the benefit of all of this?
+Benefits of implementing native replacement of ‘eigs’:
+* Julia becomes a little more lightweight
+* Native ’eigs’ can be applied to different array types
+and different number types (BigFloats, DoubleFloats,
+etc.)
+* Native ’eigs’ is more readable and easier to maintain
+than Arpack’s ‘eigs’ that is written in Fortran 90
+
+# Description of what was implemented
+
+__Fully native code__
+
+__Double shift__
+
+In `implicit_restart!`, the arnoldi procedure is restarted by shrinking the Krylov subspace by shifting away unwanted eigenvalues. If our matrix is real and the eigenvalue we want to shift happens to be complex, then we can combine two shifts that are the unwanted eigenvalue and its complex conjugate in order to stay in real arithmetic. This is implemented in [`double_shift!`](https://github.com/NymanLauri/IRAM.jl/blob/master/src/implicit_restart.jl#L110).
+
+__Implicit QR steps__
+
+The QR steps in `double_shift!` and `single_shift!` are now done implicitly. This was done to make it easier to implement double shift for conjugate eigenvalues. With implicit QR shifts, both single and double shifts are implemented with “bulge chasing” and hence work in a similar manner.
+
+__Using partial Schur decomposition__
+
+To improve stability, the implementation uses partial schur decomposition, and brings the locked part of the Hessenberg matrix into upper triangular form. The function [`restarted_arnoldi`](https://github.com/NymanLauri/IRAM.jl/blob/master/src/run.jl#L5) currently returns the partial Schur decomposition of the converged part of the Hessenberg matrix from which the eigenvalues and eigenvectors of the original matrix can be computed.
+
+# What is missing
+
+Functionality-wise:
+* `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
+
+Performance & stability-wise
+* Benchmark & profile the code in order to find areas of improvement. The method should be the same as `eigs`, however sometimes there seems to be big differences in performance.
+
+* Currently known performance considerations
+	* Refactor temporary variables
+	* In `backward_subst!`, handle the case where you want eigenvectors for conjugate eigenvalues in real arithmetic. WHY? OPTIMAL? STABLE? LAPACK DOES THIS
+
+* Stability considerations for `backward_subst!` such as (scale factor (WHAT IS THIS)), smallest value for which it is safe to divide.
