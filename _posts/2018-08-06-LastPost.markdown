@@ -40,7 +40,7 @@ Currently, the way to use the method is as follows:
 
 `partial_schur(A; min = 5, max = 30, nev = min, tol = eps(eltype(A)), maxiter = 20, which=LM())`
 
-Here, `A` is the matrix whose eigenvalues you want to compute, `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`, `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi` stops increasing the dimension of the Krylov subspace. `nev` specifies the minimum amount of eigenvalues the method gives you. `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more). `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration. `which` is a `Target` structure and specifies which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
+Here, `A` is the matrix whose eigenvalues you want to compute; `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`; `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi!` stops increasing the dimension of the Krylov subspace; `nev` specifies the minimum amount of eigenvalues the method gives you; `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more); `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration; and `which` is a `Target` structure and specifies which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
 
 This returns a partial Schur decomposition of the matrix where the upper triangular matrix R is of size nev by nev.
 
@@ -63,4 +63,4 @@ __Performance-wise & stability-wise:__
 * Currently known performance considerations
 	- Temporary variables could be refactored in order to reduce the amount of allocations
 	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
-* Stability considerations for `backward_subst!` such as smallest value for which it is safe to divide
+* Stability considerations for `backward_subst!` (e.g. smallest value for which it is safe to divide). The aim is to have a similar implementation as in LAPACK.
