@@ -21,14 +21,14 @@ The aim was to implement an eigenvalue problem solver for large and sparse nonsy
 
 Additional stuff:
 
-* Making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call.
+* Making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call. __DONE__
 
 After a few twists and turns, the search targets as well as support for generalized eigenvalue problems were implemented after all.
 
 # Major developments
 During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of:
 
-* Computing the QR decomposition through Givens rotations and using this in `implicit_restart`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
+* Computing the QR decomposition through Givens rotations and using this in `implicit_restart!`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
 * Locking of Ritz vectors: [#7](https://github.com/haampie/IRAM.jl/pull/7)
 * QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
 * Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
@@ -40,7 +40,7 @@ Currently, the way to use the method is as follows:
 
 `partial_schur(A; min = 5, max = 30, nev = min, tol = eps(eltype(A)), maxiter = 20, which=LM())`
 
-Here, `A` is the matrix whose eigenvalues you want to compute, `min` specifies the dimension to which the Hessenberg matrix is reduced after `implicit_restart`, `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi` stops increasing the dimension of the Krylov subspace. `tol` specifies the criterion for when eigenpairs have converged (In practice, smaller `tol` forces the eigenpairs to converge even more). `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration. `which` is a `Target` struct and specific which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
+Here, `A` is the matrix whose eigenvalues you want to compute, `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`, `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi` stops increasing the dimension of the Krylov subspace. `nev` specifies the minimum amount of eigenvalues the method gives you. `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more). `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration. `which` is a `Target` structure and specifies which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
 
 This returns a partial Schur decomposition of the matrix where the upper triangular matrix R is of size nev by nev.
 
@@ -58,11 +58,9 @@ than Arpack's `eigs` that is written in Fortran 90
 __Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
 
-__Performance & stability-wise:__
-* Benchmark & profile the code in order to find areas of improvement. The method should be the same as `eigs`, however sometimes there seems to be big differences in performance.
-
+__Performance-wise & stability-wise:__
+* The code needs to be benchmarked and profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`.
 * Currently known performance considerations
-	- Refactor temporary variables
-	- In `backward_subst!`, handle the case where you want eigenvectors for conjugate eigenvalues in real arithmetic
-
+	- Temporary variables could be refactored in order to reduce the amount of allocations
+	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
 * Stability considerations for `backward_subst!` such as smallest value for which it is safe to divide
