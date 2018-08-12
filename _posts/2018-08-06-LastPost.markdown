@@ -13,45 +13,17 @@ Over the summer I worked on the [IRAM.jl](https://github.com/haampie/IRAM.jl) re
 The aim was to implement an eigenvalue problem solver for large and sparse nonsymmetric matrices in Julia that would replace ARPACK's `eigs` function. This helps reduce the dependency of Julia language on ARPACK. I will provide benchmarks comparing the performance of the native `eigs` versus ARPACK's `eigs`. The aim at first was to get the method into the package IterativeSolvers.jl. However, it is also a possibility to just register the package.
 
 # Initial project outline
-
 * IRAM for real and complex arithmetics with QR iterations through Givens rotations. __DONE__
 * Finding multiple eigenpairs which requires locking of converged Ritz vectors. __DONE__
 * Adding search targets for eigenvalues. __DONE__
+	- However, search targets are not implemented in the same way as in ARPACK. The method targets the eigenvalues that are largest in magnitude by default which ahs the highest convergence rate.
 * Adding support for generalized eigenvalue problems. __DONE__
+	- This functionality is not incorporated in the method either. Generalized eigenvalue problems can be solved if the user provides an input matrix that contains the effect of both matrices in the generalized eigenvalue problem.
 
-Additional stuff:
-
+__In addition:__
 * Making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call. __DONE__
 
 After a few twists and turns, the search targets as well as support for generalized eigenvalue problems were implemented after all.
-
-# Major developments
-During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of:
-
-* Computing the QR decomposition through Givens rotations and using this in `implicit_restart!`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
-* Locking of Ritz vectors: [#7](https://github.com/haampie/IRAM.jl/pull/7)
-* QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
-* Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
-* Transform Schur form into eigenvectors: [#49](https://github.com/haampie/IRAM.jl/pull/49)
-
-# How to use it?
-
-Currently, the way to use the method is as follows:
-
-`partial_schur(A; min = 5, max = 30, nev = min, tol = eps(eltype(A)), maxiter = 20, which=LM())`
-
-Here, `A` is the matrix whose eigenvalues you want to compute; `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`; `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi!` stops increasing the dimension of the Krylov subspace; `nev` specifies the minimum amount of eigenvalues the method gives you; `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more); `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration; and `which` is a `Target` structure and specifies which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
-
-This returns a partial Schur decomposition of the matrix where the upper triangular matrix R is of size nev by nev.
-
-# What's the benefit of all of this?
-Benefits of implementing native replacement of `eigs`:
-* Julia becomes a little more lightweight
-* Native `eigs` can be applied to different array types
-and different number types (BigFloats, DoubleFloats,
-etc.)
-* Native `eigs` is more readable and easier to maintain
-than Arpack's `eigs` that is written in Fortran 90
 
 # What's left to do?
 
@@ -64,3 +36,36 @@ __Performance-wise & stability-wise:__
 	- Temporary variables could be refactored in order to reduce the amount of allocations
 	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
 * Stability considerations for `backward_subst!` (e.g. smallest value for which it is safe to divide). The aim is to have a similar implementation as in LAPACK.
+
+# Major developments
+During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of:
+
+* Computing the QR decomposition through Givens rotations and using this in `implicit_restart!`: [#2](https://github.com/haampie/IRAM.jl/pull/2), [#4](https://github.com/haampie/IRAM.jl/pull/4)
+* Locking of Ritz vectors: [#7](https://github.com/haampie/IRAM.jl/pull/7)
+* QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
+* Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
+* Transform Schur form into eigenvectors: [#49](https://github.com/haampie/IRAM.jl/pull/49)
+
+# How to use it?
+An example of how to use the method:
+```
+julia> using IRAM
+julia> A = rand(100, 100)
+julia> schur_form = partial_schur(A, min = 12, max = 30, nev = 10, tol = 1e-10, maxiter = 20, which=LM())
+julia> Q,R = schur_form.Q, schur_form.R
+julia> norm(A*Q - Q*R)
+1.4782234971282938e-14
+```
+
+Here, `A` is the `n` by `n` matrix whose partial Schur form is to be computed; `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`; `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi!` stops increasing the dimension of the Krylov subspace; `nev` specifies the minimum amount of eigenvalues the method gives you; `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more); `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration; and `which` is a `Target` structure and specifies which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
+
+This returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev` by `nev` and the unitary matrix `Q` is of size `n` by `nev`.
+
+# What's the benefit of all of this?
+Benefits of implementing native replacement of `eigs`:
+* Julia becomes a little more lightweight
+* Native `eigs` can be applied to different array types
+and different number types (BigFloats, DoubleFloats,
+etc.)
+* Native `eigs` is more readable and easier to maintain
+than Arpack's `eigs` that is written in Fortran 90
