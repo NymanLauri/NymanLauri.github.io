@@ -31,7 +31,7 @@ __In addition:__
 # What's left to do?
 
 __Method-wise:__
-* The criterion for convergence should be changed to how it is in `eigs`. `eigs` considers a Ritz value converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
+* The criterion for convergence should be changed to how it is implemented in `eigs`. `eigs` considers a Ritz value converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
 
 __Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
@@ -74,8 +74,8 @@ In the `partial_schur` function call, `A` is the `n` by `n` matrix whose eigenva
 
 The function call `partial_schur` returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev` by `nev` and the unitary matrix `Q` is of size `n` by `nev`. `schur_to_eigen` then computes the eigenvalues and eigenvectors of matrix `A` from the Schur decomposition.
 
-![My helpful screenshot]({{ "/assets/eig4.png" | absolute_url }})
-![My helpful screenshot]({{ "/assets/eig16.png" | absolute_url }})
+The same method can be applied to solve the eigenfunctions of the Helmholtz equation. Below, two eigenfunctions are visualized in a mouth shaped domain with and open boundary condition on left and fixed boundary conditions on the rest of the sides. This is an elementary model of how sound waves can form in the mouth.
+![My helpful screenshot]({{ "/assets/combined.jpg" | absolute_url }})
 
 
 # Benchmarks
