@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Final Blog Post"
-date:   2018-08-06
+date:   2018-08-13
 ---
 
 Now that we have finally arrived at the end of coding period, I want to give you an overview of the whole project: what was the initial motivation and plan; what has been done; and what still would need to be implemented.
@@ -11,6 +11,7 @@ Over the summer I worked on the [IRAM.jl](https://github.com/haampie/IRAM.jl) re
 
 # Original plan
 The aim was to implement a native Julia solver for the eigenvalue problem
+
 ```math
 Ax = \lambda x.
 ```
@@ -31,11 +32,14 @@ After a few twists and turns, the search targets as well as support for generali
 
 # What's left to do?
 
+__Method-wise:__
+* The criterion for convergence should be changed to how it is in `eigs`. `eigs` considers a Ritz value converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(\epsilon^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user-provided tolerance `tol`. 
+
 __Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
 
 __Performance-wise & stability-wise:__
-* The code needs to be benchmarked and profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`. In fact, in some cases the native `partial_schur` requires more iterations than `eigs` to find the eigenvalues of the same matrix which suggests that there are differences between the methods themselves.
+* The code needs to be profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`. In fact, in some cases the native `partial_schur` requires more iterations than `eigs` to find the eigenvalues of the same matrix which suggests that there are differences between the methods themselves. This could be partly caused by the differences in the stopping criterion.
 * Currently known performance considerations
 	- Temporary variables could be refactored in order to reduce the amount of allocations
 	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
@@ -67,9 +71,10 @@ This returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where t
 
 # Benchmarks
 
-The native `partial_schur` was benchmarked against ARPACK's `eigs`.
+The native `partial_schur` was benchmarked against ARPACK's `eigs`. However, it is difficult to compare benchmarks due to differences in the stopping criterion. In any case, it seems that even with a quite relaxed stopping criterion (`1e-5`) for natve `partial_schur`, it still has poorer performance compared to native `eigs`.
 
 __Sparse tridiagonal 6000 by 6000 matrix (smallest in magnitude)__
+
 ARPACK's `eigs`:
 ```
 BenchmarkTools.Trial:
@@ -85,7 +90,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-Native `partial_schur`:
+Native `partial_schur` (`tol = 1e-10`):
 ```
 BenchmarkTools.Trial:
   memory estimate:  71.49 MiB
@@ -100,17 +105,19 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-__Sparse tridiagonal 600 by 600 matrix (largest in magnitude)__
-
-Native ‘eigs’:
+Native `partial_schur` (`tol = 1e-5`):
 ```
-	median time:      311.895 ms (0.00% GC)
-	mean time:       	313.085 ms (1.92% GC)
-```
-Arpack’s ‘eigs’:
-```
-  	median time:      289.561 ms (0.00% GC)
-  	mean time:        	293.591 ms (0.00% GC)
+BenchmarkTools.Trial:
+  memory estimate:  47.16 MiB
+  allocs estimate:  2508
+  --------------
+  minimum time:     172.508 ms (0.79% GC)
+  median time:      200.929 ms (0.64% GC)
+  mean time:        206.289 ms (3.65% GC)
+  maximum time:     277.538 ms (28.68% GC)
+  --------------
+  samples:          25
+  evals/sample:     1
 ```
 
 # What's the benefit of all of this?
