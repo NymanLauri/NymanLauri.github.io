@@ -28,8 +28,6 @@ In particular, the aim was to solve this problem for large and sparse, nonsymmet
 __In addition:__
 * Making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call. __DONE__
 
-After a few twists and turns, the search targets as well as support for generalized eigenvalue problems were implemented after all.
-
 # What's left to do?
 
 __Method-wise:__
@@ -57,17 +55,28 @@ During the time period, the project was jointly developed with my mentor and a l
 # How to use it?
 An example of how to use the method:
 ```
-julia> using IRAM
-julia> A = rand(100, 100)
-julia> schur_form = partial_schur(A, min = 12, max = 30, nev = 10, tol = 1e-10, maxiter = 20, which=LM())
-julia> Q,R = schur_form.Q, schur_form.R
+julia> using IRAM, LinearAlgebra
+# Generate a sparse matrix
+julia> A = spdiagm(-1 => fill(-1.0, 99), 0 => fill(2.0, 100), 1 => fill(-1.001, 99));
+# Compute Schur form of A
+julia> schur_form,  = partial_schur(A, min = 12, max = 30, nev = 10, tol = 1e-10, maxiter = 20, which=LM());
+julia> Q,R = schur_form.Q, schur_form.R;
 julia> norm(A*Q - Q*R)
-1.4782234971282938e-14
+6.336794280593682e-11
+# Compute eigenvalues and eigenvectors of A
+julia> vals, vecs = schur_to_eigen(schur_form);
+# Show that Ax = λx
+julia> norm(A*vecs - vals'.*vecs)
+6.335460143979987e-11
 ```
 
-Here, `A` is the `n` by `n` matrix whose partial Schur form is to be computed; `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`; `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi!` stops increasing the dimension of the Krylov subspace; `nev` specifies the minimum amount of eigenvalues the method gives you; `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more); `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration; and `which` is a `Target` structure and specifies which eigenvalues are desired (smallest magnitude, smallest real part, etc.).
+In the `partial_schur` function call, `A` is the `n` by `n` matrix whose eigenvalues and eigenvectors you want; `min` specifies the minimum dimension to which the Hessenberg matrix is reduced after `implicit_restart!`; `max` specifies the maximum dimension of the Hessenberg matrix at which point `iterate_arnoldi!` stops increasing the dimension of the Krylov subspace; `nev` specifies the minimum amount of eigenvalues the method gives you; `tol` specifies the criterion that determines when the eigenpairs are considered converged (in practice, smaller `tol` forces the eigenpairs to converge even more); `maxiter` specifies the maximum amount of restarts the method can perform before ending the iteration; and `which` is a `Target` structure and specifies which eigenvalues are desired (Largest magnitude, smallest real part, etc.).
 
-This returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev` by `nev` and the unitary matrix `Q` is of size `n` by `nev`.
+The function call `partial_schur` returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev` by `nev` and the unitary matrix `Q` is of size `n` by `nev`. `schur_to_eigen` then computes the eigenvalues and eigenvectors of matrix `A` from the Schur decomposition.
+
+![My helpful screenshot]({{ "/assets/eig4.png" | absolute_url }})
+![My helpful screenshot]({{ "/assets/eig16.png" | absolute_url }})
+
 
 # Benchmarks
 
