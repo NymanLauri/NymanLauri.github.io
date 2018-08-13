@@ -13,7 +13,7 @@ Over the summer I worked on the [IRAM.jl](https://github.com/haampie/IRAM.jl) re
 The aim was to implement a native Julia solver for the eigenvalue problem
 
 ```math
-Ax = \lambda x.
+Ax = λx.
 ```
 In particular, the aim was to solve this problem for large and sparse, nonsymmetric matrices which would replace ARPACK's `eigs` function. This helps reduce the dependency of Julia language on ARPACK. I will provide benchmarks comparing the performance of the native `eigs` versus ARPACK's `eigs`. The aim at first was to get the method into the package IterativeSolvers.jl. However, it is also a possibility to just register the package separately.
 
@@ -33,7 +33,7 @@ After a few twists and turns, the search targets as well as support for generali
 # What's left to do?
 
 __Method-wise:__
-* The criterion for convergence should be changed to how it is in `eigs`. `eigs` considers a Ritz value converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(\epsilon^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user-provided tolerance `tol`. 
+* The criterion for convergence should be changed to how it is in `eigs`. `eigs` considers a Ritz value converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
 
 __Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
