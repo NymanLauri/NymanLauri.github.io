@@ -73,7 +73,7 @@ julia> norm(A*Q - Q*R)
 # Compute eigenvalues and eigenvectors of A
 julia> vals, vecs = schur_to_eigen(schur_form);
 # Show that Ax = λx
-julia> norm(A*vecs - vals'.*vecs)
+julia> norm(A*vecs - vecs*Diagonal(vals))
 6.335460143979987e-11
 ```
 
@@ -81,7 +81,11 @@ In the `partial_schur` function call, `A` is the `n`×`n` matrix whose eigenvalu
 
 The function call `partial_schur` returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev`×`nev` and the unitary matrix `Q` is of size `n`×`nev`. `schur_to_eigen` then computes the eigenvalues and eigenvectors of matrix `A` from the Schur decomposition.
 
-The same method can be applied to solve the eigenfunctions of the Helmholtz equation. After discretization, the problem takes the form `Ax = λBx`, where matrices `A` and `B` are of size 1176×1176. Below, two eigenfunctions are visualized in a mouth shaped domain with and open boundary condition on left and fixed boundary conditions on the rest of the sides. This is an elementary model of how sound waves can form in the mouth.
+The same method can be applied to solving the eigenfunctions of the Helmholtz equation `c²Δu + k²u = 0` which is a time-independent description of the behaviour of waves. The problem can be discretized into small areas in the domain that are piece-wise constant. Then the problem takes the form `Ax = λBx`, which is a generalized eigenvalue problem. 
+
+The discretization was done so that the matrices `A` and `B` became of size 1176×1176. This probelm can now be solved with `eigs`. Moreover, with our boundary conditions the problem is a square eigenvalue problem which leads to nonsymmetric `A` for which the native implementation is optimized. 
+
+Let the domain be mouth shaped as shown in __Figure 1__. We have the open boundary condition on the left side `c*du/dn + iku = 0` which lets the waves pass through the boundary. On the rest of the sides, we have a fixed boundary condition `u = 0`. Below, two eigenfunctions are visualized. This is an elementary model of how sound waves can form in the mouth.
 ![My helpful screenshot]({{ "/assets/combined2.jpg" | absolute_url }})
 __Figure 1.__ Two eigenfunctions of the Helmholtz equation in a mouth shaped domain.
 
