@@ -82,9 +82,9 @@ The same method can be applied to solve the eigenfunctions of the Helmholtz equa
 
 The native `partial_schur` was benchmarked against ARPACK's `eigs`. However, it is difficult to compare benchmarks due to differences in the stopping criterion. In any case, it seems that even with a quite relaxed stopping criterion (`1e-5`) for natve `partial_schur`, it still has poorer performance compared to native `eigs`. However, an absolute criterion of `1e-5` might still be very strict when eigenvalues are very large. In an attempt to ignore the effect of differing stopping criterions, the time taken per one matrix-vector product is computed. 
 
-__Generalized eigenvalue problem with sparse tridiagonal 1948 by 1948 matrix (smallest in magnitude)__
+In these benchmarks, the two methods solve a generalized eigenvalue problem with sparse tridiagonal 1948 by 1948 matrix targeting eigenvalues that are smallest in magnitude.
 
-ARPACK's `eigs`:
+__ARPACK's `eigs`:__
 ```
 BenchmarkTools.Trial:
   memory estimate:  23.03 MiB
@@ -98,10 +98,10 @@ BenchmarkTools.Trial:
   samples:          48
   evals/sample:     1
 ```
-Amount of matrix-vector products: 66
-Mean time per matrix-vector product: 105.291 ms / 66 = 1.5953181818181819 ms
+Amount of matrix-vector products: 66 \n
+Mean time per matrix-vector product: 1.5953 ms
 
-Native `partial_schur` (`tol = 1e-10`):
+__Native `partial_schur` (`tol = 1e-10`):__
 ```
 BenchmarkTools.Trial:
   memory estimate:  62.23 MiB
@@ -115,10 +115,10 @@ BenchmarkTools.Trial:
   samples:          9
   evals/sample:     1
 ```
-Amount of matrix-vector products: 473 
-Mean time per matrix-vector product: 575.171 ms / 473 = 1.2160063424947147 ms
+Amount of matrix-vector products: 473 \n
+Mean time per matrix-vector product: 1.2160 ms
 
-Native `partial_schur` (`tol = 1e-5`):
+__Native `partial_schur` (`tol = 1e-5`):__
 ```
 BenchmarkTools.Trial:
   memory estimate:  29.88 MiB
@@ -132,10 +132,10 @@ BenchmarkTools.Trial:
   samples:          16
   evals/sample:     1
 ```
-Amount of matrix-vector products: 231 
-Mean time per matrix-vector product: 328.230 ms / 231 = 1.420909090909091 ms
+Amount of matrix-vector products: 231 \n
+Mean time per matrix-vector product: 1.4209 ms
 
-Native `partial_schur` (`tol = 1e-1`):
+__Native `partial_schur` (`tol = 1e-1`):__
 ```
 BenchmarkTools.Trial:
   memory estimate:  4.34 MiB
@@ -149,8 +149,8 @@ BenchmarkTools.Trial:
   samples:          173
   evals/sample:     1
 ```
-Amount of matrix-vector products: 231 
-Mean time per matrix-vector product: 29.240 ms / 22 = 1.329090909090909 ms
+Amount of matrix-vector products: 22 \n
+Mean time per matrix-vector product: 1.3291 ms
 
 # What's the benefit of all of this?
 Benefits of implementing native replacement of `eigs`:
