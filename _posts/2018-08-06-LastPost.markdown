@@ -60,7 +60,7 @@ __Performance-wise & stability-wise:__
 * Stability considerations for `backward_subst!` (e.g. smallest value for which it is safe to divide). The aim is to have a similar implementation as in LAPACK.
 
 # How to use it?
-__Example 1:__
+__Example 1__
 ```
 julia> using IRAM, LinearAlgebra
 # Generate a sparse matrix
@@ -81,7 +81,7 @@ In the `partial_schur` function call, `A` is the `n`×`n` matrix whose eigenvalu
 
 The function call `partial_schur` returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev`×`nev` and the unitary matrix `Q` is of size `n`×`nev`. `schur_to_eigen` then computes the eigenvalues and eigenvectors of matrix `A` from the Schur decomposition.
 
-__Example 2: Formation of sound waves in mouth__
+__Example 2: Formation of sound waves in mouth__ <br>
 The same method can be applied to solving the eigenfunctions of the Helmholtz equation `c²Δu + k²u = 0` where `c` is a constant and `k` is the wavenumber, which is a time-independent description of the behaviour of waves. The problem can be discretized into small areas in the domain that are piece-wise constant. Then the problem takes the form `Ax = λBx`, which is a generalized eigenvalue problem. 
 
 The discretization was done so that the matrices `A` and `B` became of size 1176×1176. This probelm can now be solved with `eigs`. Moreover, with our boundary conditions the problem is a square eigenvalue problem which leads to nonsymmetric `A` for which the native implementation is optimized. 
