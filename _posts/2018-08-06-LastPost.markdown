@@ -98,7 +98,7 @@ BenchmarkTools.Trial:
   samples:          48
   evals/sample:     1
 ```
-Amount of matrix-vector products: 66 \n
+Amount of matrix-vector products: 66 <br>
 Mean time per matrix-vector product: 1.5953 ms
 
 __Native `partial_schur` (`tol = 1e-10`):__
@@ -115,7 +115,7 @@ BenchmarkTools.Trial:
   samples:          9
   evals/sample:     1
 ```
-Amount of matrix-vector products: 473 \n
+Amount of matrix-vector products: 473 <br>
 Mean time per matrix-vector product: 1.2160 ms
 
 __Native `partial_schur` (`tol = 1e-5`):__
@@ -132,7 +132,7 @@ BenchmarkTools.Trial:
   samples:          16
   evals/sample:     1
 ```
-Amount of matrix-vector products: 231 \n
+Amount of matrix-vector products: 231 <br>
 Mean time per matrix-vector product: 1.4209 ms
 
 __Native `partial_schur` (`tol = 1e-1`):__
@@ -149,10 +149,12 @@ BenchmarkTools.Trial:
   samples:          173
   evals/sample:     1
 ```
-Amount of matrix-vector products: 22 \n
+Amount of matrix-vector products: 22 <br>
 Mean time per matrix-vector product: 1.3291 ms
 
-# What's the benefit of all of this?
+In conclusion, the time taken per each matrix-vector product is approximately the same between ARPACK's `eigs` and the native Julia `partial_schur`. This suggests that the difference in the running time is caused by differences in the mathematical methods, and that the stopping criterion plays a role here. 
+
+# And lastly, what's the benefit of all of this?
 Benefits of implementing native replacement of `eigs`:
 * Julia becomes a little more lightweight
 * Native `eigs` can be applied to different array types
