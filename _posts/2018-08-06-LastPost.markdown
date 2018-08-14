@@ -31,13 +31,13 @@ __In addition:__
 # What's left to do?
 
 __Method-wise:__
-* The criterion for convergence should be changed to how it is implemented in `eigs`. `eigs` considers a Ritz value converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
+* The criterion for convergence should be changed to how it is implemented in `eigs`. `eigs` considers a Ritz value `θ` converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
 
 __Functionality-wise:__
 * `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
 
 __Performance-wise & stability-wise:__
-* The code needs to be profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`. In fact, in some cases the native `partial_schur` requires more iterations than `eigs` to find the eigenvalues of the same matrix which suggests that there are differences between the methods themselves. This could be partly caused by the differences in the stopping criterion.
+* The code needs to be profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`. In fact, in some cases the native `partial_schur` requires more iterations than `eigs` to find the eigenvalues of the same matrix which suggests that there are differences between the methods themselves. A likely explanation for this is differences in the stopping criterion.
 * Currently known performance considerations
 	- Temporary variables could be refactored in order to reduce the amount of allocations
 	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
@@ -75,59 +75,82 @@ In the `partial_schur` function call, `A` is the `n` by `n` matrix whose eigenva
 The function call `partial_schur` returns a partial Schur decomposition of the matrix `A` (`AQ = QR`) where the upper triangular matrix R is of size `nev` by `nev` and the unitary matrix `Q` is of size `n` by `nev`. `schur_to_eigen` then computes the eigenvalues and eigenvectors of matrix `A` from the Schur decomposition.
 
 The same method can be applied to solve the eigenfunctions of the Helmholtz equation. Below, two eigenfunctions are visualized in a mouth shaped domain with and open boundary condition on left and fixed boundary conditions on the rest of the sides. This is an elementary model of how sound waves can form in the mouth.
-![My helpful screenshot]({{ "/assets/combined.jpg" | absolute_url }})
+![My helpful screenshot]({{ "/assets/combined2.jpg" | absolute_url }})
 
 
 # Benchmarks
 
-The native `partial_schur` was benchmarked against ARPACK's `eigs`. However, it is difficult to compare benchmarks due to differences in the stopping criterion. In any case, it seems that even with a quite relaxed stopping criterion (`1e-5`) for natve `partial_schur`, it still has poorer performance compared to native `eigs`.
+The native `partial_schur` was benchmarked against ARPACK's `eigs`. However, it is difficult to compare benchmarks due to differences in the stopping criterion. In any case, it seems that even with a quite relaxed stopping criterion (`1e-5`) for natve `partial_schur`, it still has poorer performance compared to native `eigs`. However, an absolute criterion of `1e-5` might still be very strict when eigenvalues are very large. In an attempt to ignore the effect of differing stopping criterions, the time taken per one matrix-vector product is computed. 
 
-__Sparse tridiagonal 6000 by 6000 matrix (smallest in magnitude)__
+__Generalized eigenvalue problem with sparse tridiagonal 1948 by 1948 matrix (smallest in magnitude)__
 
 ARPACK's `eigs`:
 ```
 BenchmarkTools.Trial:
-  memory estimate:  30.91 MiB
-  allocs estimate:  1128
+  memory estimate:  23.03 MiB
+  allocs estimate:  2214
   --------------
-  minimum time:     72.434 ms (1.07% GC)
-  median time:      79.469 ms (1.66% GC)
-  mean time:        79.370 ms (1.83% GC)
-  maximum time:     92.863 ms (3.61% GC)
+  minimum time:     83.047 ms (2.16% GC)
+  median time:      98.686 ms (2.12% GC)
+  mean time:        105.291 ms (4.37% GC)
+  maximum time:     201.714 ms (45.27% GC)
   --------------
-  samples:          63
+  samples:          48
   evals/sample:     1
 ```
+Amount of matrix-vector products: 66
+Mean time per matrix-vector product: 105.291 ms / 66 = 1.5953181818181819 ms
 
 Native `partial_schur` (`tol = 1e-10`):
 ```
 BenchmarkTools.Trial:
-  memory estimate:  71.49 MiB
-  allocs estimate:  3836
+  memory estimate:  62.23 MiB
+  allocs estimate:  5990
   --------------
-  minimum time:     244.710 ms (0.62% GC)
-  median time:      290.083 ms (0.51% GC)
-  mean time:        305.355 ms (3.67% GC)
-  maximum time:     397.500 ms (21.98% GC)
+  minimum time:     451.928 ms (0.45% GC)
+  median time:      567.831 ms (0.47% GC)
+  mean time:        575.171 ms (2.29% GC)
+  maximum time:     748.566 ms (0.44% GC)
   --------------
-  samples:          17
+  samples:          9
   evals/sample:     1
 ```
+Amount of matrix-vector products: 473 
+Mean time per matrix-vector product: 575.171 ms / 473 = 1.2160063424947147 ms
 
 Native `partial_schur` (`tol = 1e-5`):
 ```
 BenchmarkTools.Trial:
-  memory estimate:  47.16 MiB
-  allocs estimate:  2508
+  memory estimate:  29.88 MiB
+  allocs estimate:  2836
   --------------
-  minimum time:     172.508 ms (0.79% GC)
-  median time:      200.929 ms (0.64% GC)
-  mean time:        206.289 ms (3.65% GC)
-  maximum time:     277.538 ms (28.68% GC)
+  minimum time:     222.053 ms (0.34% GC)
+  median time:      302.852 ms (0.48% GC)
+  mean time:        328.230 ms (2.07% GC)
+  maximum time:     600.037 ms (0.41% GC)
   --------------
-  samples:          25
+  samples:          16
   evals/sample:     1
 ```
+Amount of matrix-vector products: 231 
+Mean time per matrix-vector product: 328.230 ms / 231 = 1.420909090909091 ms
+
+Native `partial_schur` (`tol = 1e-1`):
+```
+BenchmarkTools.Trial:
+  memory estimate:  4.34 MiB
+  allocs estimate:  336
+  --------------
+  minimum time:     20.436 ms (0.00% GC)
+  median time:      24.677 ms (0.00% GC)
+  mean time:        29.240 ms (2.58% GC)
+  maximum time:     112.312 ms (0.00% GC)
+  --------------
+  samples:          173
+  evals/sample:     1
+```
+Amount of matrix-vector products: 231 
+Mean time per matrix-vector product: 29.240 ms / 22 = 1.329090909090909 ms
 
 # What's the benefit of all of this?
 Benefits of implementing native replacement of `eigs`:
