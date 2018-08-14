@@ -28,20 +28,6 @@ In particular, the aim was to solve this problem for large and sparse, nonsymmet
 __In addition:__
 * Making the implementation fully native which includes native Julia implementations for the `schurfact!` call and the `eigvals` call. __DONE__
 
-# What's left to do?
-
-__Method-wise:__
-* The criterion for convergence should be changed to how it is implemented in `eigs`. `eigs` considers a Ritz value `θ` converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
-
-__Functionality-wise:__
-* `partial_schur` returns the partial Schur decomposition. What still needs to be done is to compute the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition.
-
-__Performance-wise & stability-wise:__
-* The code needs to be profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`. In fact, in some cases the native `partial_schur` requires more iterations than `eigs` to find the eigenvalues of the same matrix which suggests that there are differences between the methods themselves. A likely explanation for this is differences in the stopping criterion.
-* Currently known performance considerations
-	- Temporary variables could be refactored in order to reduce the amount of allocations
-	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
-* Stability considerations for `backward_subst!` (e.g. smallest value for which it is safe to divide). The aim is to have a similar implementation as in LAPACK.
 
 # Major developments
 During the time period, the project was jointly developed with my mentor and a lot of communication took place on Slack. I will list here the key PRs that I was a part of:
@@ -51,6 +37,22 @@ During the time period, the project was jointly developed with my mentor and a l
 * QR step made implicit: [#10](https://github.com/haampie/IRAM.jl/pull/10)
 * Added native Julia implementations of computing Schur factorization for a Hessenberg matrix and computing eigenvalues from the Schur form: [#28](https://github.com/haampie/IRAM.jl/pull/28), [#30](https://github.com/haampie/IRAM.jl/pull/30)
 * Transform Schur form into eigenvectors: [#49](https://github.com/haampie/IRAM.jl/pull/49)
+
+
+# What's left to do?
+
+__Method-wise:__
+* The criterion for convergence should be changed to how it is implemented in `eigs`. `eigs` considers a Ritz value `θ` converged when its residual `||Av - vθ||` is smaller than the product of `tol` and `max(ɛ^{2/3}, |θ|)`, where `ɛ = eps(real(eltype(A)))/2` is LAPACK's machine epsilon. Native `partial_schur` considers the Ritz value converged only when the subdiagonal of the Hessenberg matrix in smaller than the user provided tolerance `tol`. 
+
+__Functionality-wise:__
+* `partial_schur` returns the partial Schur decomposition. What still needs to be done is to implement a native Julia implementation for computing the eigenvectors and eigenvalues from the partial Schur decomposition. Computing eigenvalues is quite straightforward and is currently implemented in `eigvalues`. However, computing the eigenvectors requires taking into account some stability considerations that are not currently implemented. Hence, currently the implementation only returns the partial Schur decomposition, and `schur_to_eigen` then computes the eigenvalues and eigenvectors by using `eigen`.
+
+__Performance-wise & stability-wise:__
+* The code needs to be profiled in order to find areas of improvement. The method should closely follow the implementation of `eigs`, however sometimes native `partial_schur` seems to be much slower than `eigs`. In fact, in some cases the native `partial_schur` requires more iterations than `eigs` to find the eigenvalues of the same matrix which suggests that there are differences between the methods themselves. A likely explanation for this is differences in the stopping criterion.
+* Currently known performance considerations
+	- Temporary variables could be refactored in order to reduce the amount of allocations
+	- In `backward_subst!`, the case when the method computes eigenvectors for conjugate eigenvalues could be implemented in such a way that we stay in real arithmetic throughout the whole computation
+* Stability considerations for `backward_subst!` (e.g. smallest value for which it is safe to divide). The aim is to have a similar implementation as in LAPACK.
 
 # How to use it?
 An example of how to use the method:
@@ -76,7 +78,7 @@ The function call `partial_schur` returns a partial Schur decomposition of the m
 
 The same method can be applied to solve the eigenfunctions of the Helmholtz equation. Below, two eigenfunctions are visualized in a mouth shaped domain with and open boundary condition on left and fixed boundary conditions on the rest of the sides. This is an elementary model of how sound waves can form in the mouth.
 ![My helpful screenshot]({{ "/assets/combined2.jpg" | absolute_url }})
-
+__Figure 1.__ Eigenfunctions of the Helmholtz equation in a mouth shaped domain.
 
 # Benchmarks
 
@@ -97,9 +99,10 @@ BenchmarkTools.Trial:
   --------------
   samples:          48
   evals/sample:     1
+  --------------
+  Amount of matrix-vector products: 66
+  Mean time per matrix-vector product: 1.5953 ms
 ```
-Amount of matrix-vector products: 66 <br>
-Mean time per matrix-vector product: 1.5953 ms
 
 __Native `partial_schur` (`tol = 1e-10`):__
 ```
@@ -114,9 +117,10 @@ BenchmarkTools.Trial:
   --------------
   samples:          9
   evals/sample:     1
+  --------------
+  Amount of matrix-vector products: 473
+  Mean time per matrix-vector product: 1.2160 ms
 ```
-Amount of matrix-vector products: 473 <br>
-Mean time per matrix-vector product: 1.2160 ms
 
 __Native `partial_schur` (`tol = 1e-5`):__
 ```
@@ -131,9 +135,10 @@ BenchmarkTools.Trial:
   --------------
   samples:          16
   evals/sample:     1
+  --------------
+  Amount of matrix-vector products: 231
+  Mean time per matrix-vector product: 1.4209 ms
 ```
-Amount of matrix-vector products: 231 <br>
-Mean time per matrix-vector product: 1.4209 ms
 
 __Native `partial_schur` (`tol = 1e-1`):__
 ```
@@ -148,9 +153,10 @@ BenchmarkTools.Trial:
   --------------
   samples:          173
   evals/sample:     1
+  --------------
+  Amount of matrix-vector products: 22
+  Mean time per matrix-vector product: 1.3291 ms
 ```
-Amount of matrix-vector products: 22 <br>
-Mean time per matrix-vector product: 1.3291 ms
 
 In conclusion, the time taken per each matrix-vector product is approximately the same between ARPACK's `eigs` and the native Julia `partial_schur`. This suggests that the difference in the running time is caused by differences in the mathematical methods, and that the stopping criterion plays a role here. 
 
